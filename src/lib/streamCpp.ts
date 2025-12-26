@@ -1,11 +1,6 @@
-import protobuf from "protobufjs";
 import https from "node:https";
 import type { IncomingMessage } from "node:http";
-import type {
-  StreamCppRequest,
-  StreamCppResult,
-  ProtoType,
-} from "./types/proto";
+import type { StreamCppRequest, ProtoType } from "./types/proto";
 import { defaultStreamCppPayload } from "./constants";
 import {
   CURSOR_BEARER_TOKEN,
@@ -13,6 +8,17 @@ import {
   X_REQUEST_ID,
   X_SESSION_ID,
 } from "./env";
+import {
+  loadProtoTypes,
+  createConnectEnvelope,
+  parseConnectEnvelopes,
+  parseTrailer,
+  createStreamResult,
+  applyDecodedToResult,
+  tryParseJsonError,
+  safeStringify,
+  parseBoolField,
+} from "./utils/protoUtils";
 
 async function sendStreamCppRequest(
   code: string = "function"
@@ -29,28 +35,20 @@ async function sendStreamCppRequest(
   newPayload.currentFile.contents = code;
 
   console.log("New Code:", code);
-  const requestRoot = await protobuf.load("./protobuf/streamCppRequest.proto");
-  const Request = requestRoot.lookupType(
-    "aiserver.v1.StreamCppRequest"
-  ) as unknown as ProtoType;
 
-  const responseRoot = await protobuf.load(
-    "./protobuf/streamCppResponse.proto"
-  );
-  const Response = responseRoot.lookupType(
+  const { Request, Response } = await loadProtoTypes(
+    "./protobuf/streamCppRequest.proto",
+    "aiserver.v1.StreamCppRequest",
+    "./protobuf/streamCppResponse.proto",
     "aiserver.v1.StreamCppResponse"
-  ) as unknown as ProtoType;
+  );
 
   const payload: StreamCppRequest = newPayload;
-
+  const RequestType = Request as unknown as ProtoType;
   const protoBuffer = Buffer.from(
-    Request.encode(Request.create(payload)).finish()
+    RequestType.encode(RequestType.create(payload)).finish()
   );
-
-  const envelope = Buffer.alloc(5 + protoBuffer.length);
-  envelope.writeUInt8(0, 0);
-  envelope.writeUInt32BE(protoBuffer.length, 1);
-  protoBuffer.copy(envelope, 5);
+  const envelope = createConnectEnvelope(protoBuffer);
 
   const url = new URL(
     "https://us-only.gcpp.cursor.sh:443/aiserver.v1.AiService/StreamCpp"
@@ -79,111 +77,29 @@ async function sendStreamCppRequest(
   return new Promise<string>((resolve, reject) => {
     const req = https.request(options, (res: IncomingMessage) => {
       let dataBuffer = Buffer.alloc(0);
-
-      // Collect all stream data
-      const result: StreamCppResult = {
-        status: res.statusCode,
-        contentType: res.headers["content-type"] ?? "",
-        modelInfo: null,
-        rangeToReplace: null,
-        text: "",
-        doneEdit: false,
-        doneStream: false,
-        debug: null,
-        trailer: null,
-        error: null,
-      };
+      const result = createStreamResult(
+        res.statusCode,
+        res.headers["content-type"] ?? ""
+      );
 
       res.on("data", (chunk: Buffer) => {
         dataBuffer = Buffer.concat([dataBuffer, chunk]);
 
-        // Parse Connect protocol envelopes: 1 byte flags + 4 bytes length + message
-        while (dataBuffer.length >= 5) {
-          const flags = dataBuffer.readUInt8(0);
-          const msgLen = dataBuffer.readUInt32BE(1);
+        const { envelopes, remaining } = parseConnectEnvelopes(dataBuffer);
+        dataBuffer = remaining as unknown as Buffer<ArrayBuffer>;
 
-          // Check if we have the full message
-          if (dataBuffer.length < 5 + msgLen) {
-            break; // Wait for more data
-          }
-
-          const msgData = dataBuffer.slice(5, 5 + msgLen);
-          dataBuffer = dataBuffer.slice(5 + msgLen);
-
-          // flags & 0x02 means it's a trailer/end-stream frame (JSON)
-          if (flags & 0x02) {
-            try {
-              result.trailer = JSON.parse(msgData.toString("utf8")) as unknown;
-            } catch {
-              result.trailer = msgData.toString("utf8");
-            }
+        for (const env of envelopes) {
+          if (env.isTrailer) {
+            result.trailer = parseTrailer(env.data);
             continue;
           }
 
-          // Regular data frame - decode protobuf
           try {
-            const decoded = Response.decode(msgData) as any;
-
-            // Protobuf fields are in snake_case, map them to camelCase
-            // Handle both snake_case (from proto) and camelCase (if protobufjs converts)
-            if (decoded.model_info || decoded.modelInfo) {
-              const modelInfo = decoded.model_info || decoded.modelInfo;
-              result.modelInfo = {
-                isFusedCursorPredictionModel:
-                  modelInfo.is_fused_cursor_prediction_model ??
-                  modelInfo.isFusedCursorPredictionModel ??
-                  false,
-                isMultidiffModel:
-                  modelInfo.is_multidiff_model ??
-                  modelInfo.isMultidiffModel ??
-                  false,
-              };
-            }
-            if (decoded.range_to_replace || decoded.rangeToReplace) {
-              const range = decoded.range_to_replace || decoded.rangeToReplace;
-              result.rangeToReplace = {
-                startLine: range.start_line ?? range.startLine ?? 0,
-                startColumn: range.start_column ?? range.startColumn ?? 0,
-                endLine: range.end_line ?? range.endLine ?? 0,
-                endColumn: range.end_column ?? range.endColumn ?? 0,
-              };
-            }
-            if (decoded.text) {
-              result.text += decoded.text;
-            }
-            if (
-              decoded.done_edit !== undefined ||
-              decoded.doneEdit !== undefined
-            ) {
-              result.doneEdit = decoded.done_edit ?? decoded.doneEdit ?? false;
-            }
-            if (
-              decoded.done_stream !== undefined ||
-              decoded.doneStream !== undefined
-            ) {
-              result.doneStream =
-                decoded.done_stream ?? decoded.doneStream ?? false;
-            }
-            if (
-              decoded.debug_model_output ||
-              decoded.debugStreamTime ||
-              decoded.debug_model_input ||
-              decoded.debug_ttft_time ||
-              decoded.debugModelOutput ||
-              decoded.debugStreamTime ||
-              decoded.debugModelInput ||
-              decoded.debugTtftTime
-            ) {
-              result.debug = {
-                modelOutput:
-                  decoded.debug_model_output ?? decoded.debugModelOutput,
-                modelInput:
-                  decoded.debug_model_input ?? decoded.debugModelInput,
-                streamTime:
-                  decoded.debug_stream_time ?? decoded.debugStreamTime,
-                ttftTime: decoded.debug_ttft_time ?? decoded.debugTtftTime,
-              };
-            }
+            const decoded = Response.decode(env.data) as unknown as Record<
+              string,
+              unknown
+            >;
+            applyDecodedToResult(decoded, result);
           } catch (e) {
             const error = e as Error;
             result.error = error.message;
@@ -193,102 +109,61 @@ async function sendStreamCppRequest(
       });
 
       res.on("end", () => {
-        // Handle any remaining data as error response
+        // Handle any remaining data
         if (dataBuffer.length > 0) {
-          const contentType = res.headers["content-type"] ?? "";
-          if (
-            contentType.includes("application/json") ||
-            dataBuffer[0] === 0x7b
-          ) {
-            try {
-              result.error = JSON.parse(dataBuffer.toString("utf8")) as unknown;
-            } catch {
-              result.error = dataBuffer.toString("utf8");
-            }
+          const jsonError = tryParseJsonError(
+            dataBuffer,
+            res.headers["content-type"] ?? ""
+          );
+          if (jsonError) {
+            result.error = jsonError;
           } else {
             // Try to parse remaining buffer as protobuf
             try {
-              const decoded = Response.decode(dataBuffer) as any;
-              if (decoded.text) result.text += decoded.text;
-              if (
-                decoded.done_edit !== undefined ||
-                decoded.doneEdit !== undefined
-              ) {
-                result.doneEdit =
-                  decoded.done_edit ?? decoded.doneEdit ?? false;
-              }
-              if (
-                decoded.done_stream !== undefined ||
-                decoded.doneStream !== undefined
-              ) {
-                result.doneStream =
-                  decoded.done_stream ?? decoded.doneStream ?? false;
-              }
+              const decoded = Response.decode(dataBuffer) as unknown as Record<
+                string,
+                unknown
+              >;
+              if (decoded.text) result.text += decoded.text as string;
+              const doneEdit = parseBoolField(decoded, "done_edit", "doneEdit");
+              if (doneEdit !== undefined) result.doneEdit = doneEdit;
+              const doneStream = parseBoolField(
+                decoded,
+                "done_stream",
+                "doneStream"
+              );
+              if (doneStream !== undefined) result.doneStream = doneStream;
             } catch {
               // Ignore decode errors for remaining buffer
             }
           }
         }
 
-        // Check for error status codes
         if (res.statusCode && res.statusCode >= 400) {
           result.error = result.error || `HTTP ${res.statusCode}`;
         }
 
-        // Return final JSON - always return something
-        try {
-          const jsonResult = JSON.stringify(result, null, 2);
-          if (!jsonResult || jsonResult.trim().length === 0) {
-            console.warn("JSON stringify returned empty, using fallback");
-            resolve(
-              JSON.stringify(
-                { error: "Empty response", status: res.statusCode },
-                null,
-                2
-              )
-            );
-          } else {
-            console.log(
-              "Resolving with JSON (length:",
-              jsonResult.length + ")"
-            );
-            resolve(jsonResult);
-          }
-        } catch (stringifyError) {
-          console.error("JSON stringify error:", stringifyError);
-          resolve(
-            JSON.stringify(
-              { error: "Failed to stringify result", raw: result },
-              null,
-              2
-            )
-          );
-        }
+        console.log(
+          "Resolving with JSON (length:",
+          safeStringify(result).length + ")"
+        );
+        console.log(result);
+        resolve(safeStringify(result, res.statusCode));
       });
 
       res.on("error", (err: Error) => {
         result.error = err.message;
-        try {
-          const jsonResult = JSON.stringify(result, null, 2);
-          console.log(
-            "Resolving with error JSON (length:",
-            jsonResult.length + ")"
-          );
-          resolve(jsonResult);
-        } catch (stringifyError) {
-          console.error(
-            "JSON stringify error in error handler:",
-            stringifyError
-          );
-          resolve(JSON.stringify({ error: err.message }, null, 2));
-        }
+        console.log(
+          "Resolving with error JSON (length:",
+          safeStringify(result).length + ")"
+        );
+        resolve(safeStringify(result));
       });
     });
 
     req.on("error", (err: Error) => {
       console.error("Request error:", err.message);
-      const errorResult = JSON.stringify({ error: err.message }, null, 2);
-      reject(new Error(errorResult));
+      reject(new Error(JSON.stringify({ error: err.message }, null, 2)));
     });
 
     req.write(envelope);

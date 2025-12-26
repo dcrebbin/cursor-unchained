@@ -113,7 +113,7 @@ export interface RepositoryInfo {
   isLocal?: boolean;
   numFiles?: number;
   orthogonalTransformSeed?: number;
-  preferredEmbeddingModel?: EmbeddingModel;
+  preferredEmbeddingModel?: EmbeddingModel | string;
   workspaceUri?: string;
   workspaceUris?: Record<string, WorkspaceUri>;
   preferredDbProvider?: DbProvider;
@@ -344,13 +344,172 @@ export interface StreamUnifiedChatResponseWithTools {
   eventId: string;
 }
 
+export interface ExplicitContext {
+  context: string;
+  rules: string[];
+  mcpInstructions: string[];
+}
+
+export interface AzureState {
+  apiKey: string;
+  baseUrl: string;
+  deployment: string;
+  useAzure: boolean;
+}
+
+export interface ModelDetails {
+  modelName: string;
+  azureState: AzureState;
+  maxMode: boolean;
+}
+
+export interface EnvironmentInfo {
+  exthostPlatform: string;
+  exthostArch: string;
+  exthostRelease: string;
+  exthostShell: string;
+  localTimestamp: number;
+  workspaceUris: string[];
+  homeDirectory: string;
+  localTimezone: string;
+}
+
+export interface ConversationHeader {
+  bubbleId: string;
+  type: string;
+}
+
+export interface WorkspaceFolder {
+  uri: string;
+  name: string;
+}
+
 export interface StreamUnifiedChatRequest {
   conversation: Conversation[];
+  allowLongFileScan?: boolean;
+  explicitContext?: ExplicitContext;
+  canHandleFilenamesAfterLanguageIds?: boolean;
+  modelDetails?: ModelDetails;
+  documentationIdentifiers?: unknown[];
+  externalLinks?: unknown[];
+  diffsForCompressingFiles?: unknown[];
+  multiFileLinterErrors?: unknown[];
+  fileDiffHistories?: FileDiffHistory[];
+  useNewCompressionScheme?: boolean;
+  additionalRankedContext?: unknown[];
+  quotes?: unknown[];
+  isChat?: boolean;
+  conversationId?: string;
+  repositoryInfo?: RepositoryInfo;
+  repositoryInfoShouldQueryStaging?: boolean;
+  environmentInfo?: EnvironmentInfo;
+  isAgentic?: boolean;
+  supportedTools?: string[];
+  fullConversationHeadersOnly?: ConversationHeader[];
+  enableYoloMode?: boolean;
+  yoloPrompt?: string;
+  useUnifiedChatPrompt?: boolean;
+  mcpTools?: unknown[];
+  useFullInputsContext?: boolean;
+  allowModelFallbacks?: boolean;
+  numberOfTimesShownFallbackModelWarning?: number;
+  repositoryInfoShouldQueryProd?: boolean;
+  repoQueryAuthToken?: string;
+  isHeadless?: boolean;
+  unifiedMode?: string;
+  toolsRequiringAcceptedReturn?: string[];
+  shouldDisableTools?: boolean;
+  thinkingLevel?: string;
+  modeUsesAutoApply?: boolean;
+  unifiedModeName?: string;
+  editToolSupportsSearchAndReplace?: boolean;
+  projectLayouts?: unknown[];
+  supportsMermaidDiagrams?: boolean;
+  supportsGitIndex?: boolean;
+  isBackgroundComposer?: boolean;
+  forceIsNotDev?: boolean;
+  disableEditFileTimeout?: boolean;
+  replyingToRequestId?: string;
+  isQuickSearchQuery?: boolean;
+  isSpecMode?: boolean;
+  allowServerSideSemanticSearch?: boolean;
+  speculativeSummarizationEncryptionKey?: string;
+  workspaceFolders?: WorkspaceFolder[];
+  doesReadfileSupportImages?: boolean;
+  sandboxingSupportEnabled?: boolean;
+  enableTerminalFilePersistence?: boolean;
+  terminalsFolder?: string;
+  hasMcpDescriptors?: boolean;
+  agentTranscriptsFolder?: string;
 }
 
 export interface Conversation {
   text: string;
   type: string;
+  attachedCodeChunks?: unknown[];
+  codebaseContextChunks?: unknown[];
+  commits?: unknown[];
+  pullRequests?: unknown[];
+  gitDiffs?: unknown[];
+  assistantSuggestedDiffs?: unknown[];
+  interpreterResults?: unknown[];
+  images?: unknown[];
+  attachedFolders?: unknown[];
+  approximateLintErrors?: unknown[];
+  bubbleId?: string;
+  attachedFoldersNew?: unknown[];
+  lints?: unknown[];
+  userResponsesToSuggestedCodeBlocks?: unknown[];
+  relevantFiles?: unknown[];
+  toolResults?: unknown[];
+  notepads?: unknown[];
+  capabilities?: unknown[];
+  editTrailContexts?: unknown[];
+  suggestedCodeBlocks?: unknown[];
+  diffsForCompressingFiles?: unknown[];
+  multiFileLinterErrors?: unknown[];
+  diffHistories?: unknown[];
+  recentlyViewedFiles?: unknown[];
+  recentLocationsHistory?: unknown[];
+  isAgentic?: boolean;
+  fileDiffTrajectories?: unknown[];
+  existedSubsequentTerminalCommand?: boolean;
+  existedPreviousTerminalCommand?: boolean;
+  docsReferences?: unknown[];
+  webReferences?: unknown[];
+  attachedFoldersListDirResults?: unknown[];
+  humanChanges?: unknown[];
+  attachedHumanChanges?: boolean;
+  summarizedComposers?: unknown[];
+  cursorRules?: unknown[];
+  contextPieces?: unknown[];
+  allThinkingBlocks?: unknown[];
+  unifiedMode?: string;
+  diffsSinceLastApply?: unknown[];
+  deletedFiles?: unknown[];
+  supportedTools?: string[];
+  editToolSupportsSearchAndReplace?: boolean;
+  consoleLogs?: unknown[];
+  richText?: string;
+  knowledgeItems?: unknown[];
+  uiElementPicked?: unknown[];
+  documentationSelections?: unknown[];
+  externalLinks?: unknown[];
+  useWeb?: boolean;
+  projectLayouts?: unknown[];
+  capabilityContexts?: unknown[];
+  todos?: unknown[];
+  requestId?: string;
+  aiWebSearchResults?: unknown[];
+  isPlanExecution?: boolean;
+  createdAt?: string;
+  modelInfo?: {
+    modelName?: string;
+  };
+  isQuickSearchQuery?: boolean;
+  mcpDescriptors?: unknown[];
+  workspaceProjectDir?: string;
+  workspaceUris?: string[];
 }
 
 export interface ClientSideToolV2Result {

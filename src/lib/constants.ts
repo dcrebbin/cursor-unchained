@@ -2,6 +2,8 @@ import type {
   CurrentFileInfo,
   RefreshTabContextRequest,
   StreamCppRequest,
+  StreamUnifiedChatRequest,
+  StreamUnifiedChatRequestWithTools,
 } from "./types/proto";
 
 export const defaultRefreshTabContextPayload: RefreshTabContextRequest = {
@@ -108,7 +110,7 @@ export const defaultStreamCppPayload: StreamCppRequest = {
   codeResults: [],
 };
 
-export const defaultChatPanePayload: any = {
+export const defaultChatPanePayload: StreamUnifiedChatRequest = {
   conversation: [
     {
       text: "hey",
