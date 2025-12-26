@@ -329,3 +329,60 @@ export interface DecodedCodeResult {
 export interface ManuallyDecodedResponse {
   codeResults?: DecodedCodeResult[];
 }
+
+export interface StreamUnifiedChatRequestWithTools {
+  request: StreamUnifiedChatRequest;
+  clientSideToolV2Result: ClientSideToolV2Result;
+}
+
+export interface StreamUnifiedChatResponseWithTools {
+  response: StreamUnifiedChatResponse;
+  conversationSummary: ConversationSummary;
+  userRules: UserRules;
+  streamStart: StreamStart;
+  tracingContext: TracingContext;
+  eventId: string;
+}
+
+export interface StreamUnifiedChatRequest {
+  conversation: Conversation[];
+}
+
+export interface Conversation {
+  text: string;
+  type: string;
+}
+
+export interface ClientSideToolV2Result {
+  toolName: string;
+  toolResult: string;
+}
+
+export interface StreamUnifiedChatResponse {
+  text?: string;
+  suggestionStartLine?: number;
+  suggestionConfidence?: number;
+  doneStream?: boolean;
+  debugModelOutput?: string;
+  debugModelInput?: string;
+  debugStreamTime?: string;
+  debugTotalTime?: string;
+  debugTtftTime?: string;
+  debugServerTiming?: string;
+}
+
+export interface ConversationSummary {
+  summary: string;
+}
+
+export interface UserRules {
+  rules: string;
+}
+
+export interface StreamStart {
+  start: string;
+}
+
+export interface TracingContext {
+  tracingId: string;
+}

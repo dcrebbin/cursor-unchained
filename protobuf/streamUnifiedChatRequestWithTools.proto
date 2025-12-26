@@ -24,6 +24,7 @@ message Range {}
 message CodeSearchResultItem {}
 message FileInfo {}
 message CurrentFile {}
+message ClientSideToolV2Result {}
 
 // Enum for supported tools (referenced but not fully defined in source)
 enum SupportedTool {
@@ -184,4 +185,11 @@ message StreamUnifiedChatRequest {
   optional string best_of_n_group_id = 91;
   optional bool try_use_best_of_n_promotion = 92;
   optional string agent_transcripts_folder = 93;
+}
+
+message StreamUnifiedChatRequestWithTools {
+  oneof request {
+    StreamUnifiedChatRequest stream_unified_chat_request = 1;
+    ClientSideToolV2Result client_side_tool_v2_result = 2;
+  }
 }
