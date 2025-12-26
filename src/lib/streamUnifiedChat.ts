@@ -1,6 +1,13 @@
-import https from "node:https";
-import type { IncomingMessage } from "node:http";
-import type { ProtoType, StreamUnifiedChatRequest } from "./types/proto";
+import { spawn } from "node:child_process";
+import zlib from "node:zlib";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import type {
+  ProtoType,
+  StreamUnifiedChatRequest,
+  StreamUnifiedChatRequestWithTools,
+} from "./types/proto";
 import { defaultChatPanePayload } from "./constants";
 import {
   CURSOR_BEARER_TOKEN,
@@ -15,7 +22,6 @@ import {
   parseTrailer,
   createStreamResult,
   applyDecodedToResult,
-  tryParseJsonError,
   safeStringify,
   parseBoolField,
 } from "./utils/protoUtils";
@@ -30,9 +36,24 @@ async function sendStreamUnifiedChatRequest(
     );
     process.exit(1);
   }
+  // Try a minimal request first
+  // type: 1 = MESSAGE_TYPE_HUMAN (enum value)
+  const minimalRequest: StreamUnifiedChatRequest = {
+    conversation: [
+      {
+        text: message,
+        type: 1, // MESSAGE_TYPE_HUMAN enum value
+        bubbleId: "test-bubble-id",
+      },
+    ],
+    conversationId: "test-conversation-id",
+    isAgentic: false,
+    isChat: true,
+  };
 
-  const newPayload = { ...defaultChatPanePayload };
-  newPayload.conversation[0].text = message;
+  const newPayload: StreamUnifiedChatRequestWithTools = {
+    streamUnifiedChatRequest: minimalRequest,
+  };
 
   console.log("New Message:", message);
 
@@ -43,50 +64,114 @@ async function sendStreamUnifiedChatRequest(
     "aiserver.v1.StreamUnifiedChatResponseWithTools"
   );
 
-  const payload: StreamUnifiedChatRequest = newPayload;
+  const payload: StreamUnifiedChatRequestWithTools = newPayload;
   const RequestType = Request as unknown as ProtoType;
-  const protoBuffer = Buffer.from(
-    RequestType.encode(RequestType.create(payload)).finish()
-  );
-  const envelope = createConnectEnvelope(protoBuffer);
+  const created = RequestType.create(payload);
+  const protoBuffer = Buffer.from(RequestType.encode(created).finish());
 
-  const url = new URL(
-    "https://api2.cursor.sh:443/aiserver.v1.ChatService/StreamUnifiedChatWithTools"
-  );
+  // Create envelope without compression
+  const envelope = createConnectEnvelope(protoBuffer, false);
 
-  const options: https.RequestOptions = {
-    hostname: url.hostname,
-    port: url.port || 443,
-    path: url.pathname,
-    method: "POST",
-    headers: {
-      "connect-accept-encoding": "gzip",
-      "connect-content-encoding": "gzip",
-      "connect-protocol-version": "1",
-      "content-type": "application/connect+proto",
-      "x-cursor-client-type": "ide",
-      "x-cursor-client-version": X_CURSOR_CLIENT_VERSION ?? "",
-      "x-cursor-streaming": "true",
-      "x-request-id": X_REQUEST_ID ?? "",
-      "x-session-id": X_SESSION_ID ?? "",
-      Authorization: `Bearer ${token}`,
-      "Content-Length": envelope.length,
-    },
-  };
+  // Write to a temp file for curl to read
+  const tmpFile = path.join(os.tmpdir(), `cursor-request-${Date.now()}.bin`);
+  fs.writeFileSync(tmpFile, envelope);
 
   return new Promise<string>((resolve, reject) => {
-    const req = https.request(options, (res: IncomingMessage) => {
-      let dataBuffer = Buffer.alloc(0);
-      const result = createStreamResult(
-        res.statusCode,
-        res.headers["content-type"] ?? ""
+    const url =
+      "https://api2.cursor.sh/aiserver.v1.ChatService/StreamUnifiedChatWithTools";
+
+    // Use curl with HTTP/2
+    const curlArgs = [
+      "--http2",
+      "-s", // Silent mode
+      "-X",
+      "POST",
+      url,
+      "-H",
+      "Content-Type: application/connect+proto",
+      "-H",
+      "connect-accept-encoding: gzip",
+      "-H",
+      "connect-protocol-version: 1",
+      "-H",
+      `x-cursor-client-type: ide`,
+      "-H",
+      `x-cursor-client-version: ${X_CURSOR_CLIENT_VERSION ?? ""}`,
+      "-H",
+      "x-cursor-streaming: true",
+      "-H",
+      `x-request-id: ${X_REQUEST_ID ?? ""}`,
+      "-H",
+      `x-session-id: ${X_SESSION_ID ?? ""}`,
+      "-H",
+      `Authorization: Bearer ${token}`,
+      "--data-binary",
+      `@${tmpFile}`,
+      "-w",
+      "\n%{http_code}", // Append status code
+    ];
+
+    const curl = spawn("curl", curlArgs);
+
+    const chunks: Buffer[] = [];
+    let stderr = "";
+
+    curl.stdout.on("data", (chunk) => {
+      chunks.push(chunk);
+    });
+
+    curl.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    curl.on("close", (code) => {
+      // Clean up temp file
+      try {
+        fs.unlinkSync(tmpFile);
+      } catch {
+        // Ignore cleanup errors
+      }
+
+      const output = Buffer.concat(chunks);
+
+      // Parse status code from end of output
+      const outputStr = output.toString();
+      const lines = outputStr.trimEnd().split("\n");
+      const statusCode = parseInt(lines[lines.length - 1], 10) || 0;
+
+      console.log("HTTP Status:", statusCode);
+
+      // Remove the status code line from output
+      const responseData = output.subarray(
+        0,
+        output.length - lines[lines.length - 1].length - 1
       );
 
-      res.on("data", (chunk: Buffer) => {
-        dataBuffer = Buffer.concat([dataBuffer, chunk]);
+      const result = createStreamResult(
+        statusCode,
+        "application/connect+proto"
+      );
 
-        const { envelopes, remaining } = parseConnectEnvelopes(dataBuffer);
-        dataBuffer = remaining as unknown as Buffer<ArrayBuffer>;
+      if (responseData.length > 0) {
+        // Check if response is gzip compressed and decompress
+        let decompressedData = responseData;
+        // Gzip magic bytes: 0x1f 0x8b
+        if (responseData[0] === 0x1f && responseData[1] === 0x8b) {
+          try {
+            decompressedData = zlib.gunzipSync(responseData);
+            console.log(
+              "Decompressed response:",
+              decompressedData.length,
+              "bytes"
+            );
+          } catch (e) {
+            console.error("Failed to decompress response:", e);
+          }
+        }
+
+        // Parse all envelopes from the buffer
+        const { envelopes, remaining } =
+          parseConnectEnvelopes(decompressedData);
 
         for (const env of envelopes) {
           if (env.isTrailer) {
@@ -106,68 +191,59 @@ async function sendStreamUnifiedChatRequest(
             console.error("Decode error:", error.message);
           }
         }
-      });
 
-      res.on("end", () => {
         // Handle any remaining data
-        if (dataBuffer.length > 0) {
-          const jsonError = tryParseJsonError(
-            dataBuffer,
-            res.headers["content-type"] ?? ""
-          );
-          if (jsonError) {
-            result.error = jsonError;
-          } else {
-            // Try to parse remaining buffer as protobuf
-            try {
-              const decoded = Response.decode(dataBuffer) as unknown as Record<
-                string,
-                unknown
-              >;
-              if (decoded.text) result.text += decoded.text as string;
-              const doneEdit = parseBoolField(decoded, "done_edit", "doneEdit");
-              if (doneEdit !== undefined) result.doneEdit = doneEdit;
-              const doneStream = parseBoolField(
-                decoded,
-                "done_stream",
-                "doneStream"
-              );
-              if (doneStream !== undefined) result.doneStream = doneStream;
-            } catch {
-              // Ignore decode errors for remaining buffer
+        if (remaining.length > 0) {
+          try {
+            const decoded = Response.decode(remaining) as unknown as Record<
+              string,
+              unknown
+            >;
+            if (decoded.text) result.text += decoded.text as string;
+            const doneEdit = parseBoolField(decoded, "done_edit", "doneEdit");
+            if (doneEdit !== undefined) result.doneEdit = doneEdit;
+            const doneStream = parseBoolField(
+              decoded,
+              "done_stream",
+              "doneStream"
+            );
+            if (doneStream !== undefined) result.doneStream = doneStream;
+          } catch {
+            // Try parsing as text
+            const text = Buffer.from(remaining).toString("utf8");
+            if (text.includes("{")) {
+              try {
+                result.error = JSON.parse(text);
+              } catch {
+                result.error = text;
+              }
             }
           }
         }
+      }
 
-        if (res.statusCode && res.statusCode >= 400) {
-          result.error = result.error || `HTTP ${res.statusCode}`;
-        }
+      if (statusCode >= 400) {
+        result.error = result.error || `HTTP ${statusCode}`;
+      }
 
-        console.log(
-          "Resolving with JSON (length:",
-          safeStringify(result).length + ")"
-        );
-        console.log(result);
-        resolve(safeStringify(result, res.statusCode));
-      });
+      console.log(
+        "Resolving with JSON (length:",
+        safeStringify(result).length + ")"
+      );
+      console.log(result.trailer.error.details[0].debug);
 
-      res.on("error", (err: Error) => {
-        result.error = err.message;
-        console.log(
-          "Resolving with error JSON (length:",
-          safeStringify(result).length + ")"
-        );
-        resolve(safeStringify(result));
-      });
+      resolve(safeStringify(result, statusCode));
     });
 
-    req.on("error", (err: Error) => {
-      console.error("Request error:", err.message);
-      reject(new Error(JSON.stringify({ error: err.message }, null, 2)));
+    curl.on("error", (err) => {
+      // Clean up temp file
+      try {
+        fs.unlinkSync(tmpFile);
+      } catch {
+        // Ignore cleanup errors
+      }
+      reject(new Error(`curl failed: ${err.message}`));
     });
-
-    req.write(envelope);
-    req.end();
   });
 }
 

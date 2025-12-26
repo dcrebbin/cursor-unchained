@@ -256,10 +256,16 @@ export function tryParseJsonError(
 
 /**
  * Create Connect protocol envelope for request
+ * @param protoBuffer - The protobuf message buffer
+ * @param compressed - Whether the data is compressed (sets flag bit 0)
  */
-export function createConnectEnvelope(protoBuffer: Buffer): Buffer {
+export function createConnectEnvelope(
+  protoBuffer: Buffer,
+  compressed: boolean = false
+): Buffer {
   const envelope = Buffer.alloc(5 + protoBuffer.length);
-  envelope.writeUInt8(0, 0);
+  // Flags: bit 0 = compression flag
+  envelope.writeUInt8(compressed ? 1 : 0, 0);
   envelope.writeUInt32BE(protoBuffer.length, 1);
   protoBuffer.copy(envelope, 5);
   return envelope;

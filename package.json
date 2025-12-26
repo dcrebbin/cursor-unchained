@@ -31,6 +31,7 @@
 		"@tailwindcss/vite": "^4.1.18",
 		"elysia": "^1.4.19",
 		"protobufjs": "^8.0.0",
-		"tailwindcss": "^4.1.18"
+		"tailwindcss": "^4.1.18",
+		"undici": "^7.16.0"
 	}
 }

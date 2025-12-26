@@ -1,3 +1,3 @@
-import streamCpp from "../src/lib/streamCpp";
+import sendStreamCppRequest from "../src/lib/streamCpp";
 
-streamCpp();
+sendStreamCppRequest("function test() { console.log('hello'); }");

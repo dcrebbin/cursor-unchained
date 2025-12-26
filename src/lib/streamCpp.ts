@@ -1,4 +1,6 @@
 import https from "node:https";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { IncomingMessage } from "node:http";
 import type { StreamCppRequest, ProtoType } from "./types/proto";
 import { defaultStreamCppPayload } from "./constants";
@@ -20,6 +22,11 @@ import {
   parseBoolField,
 } from "./utils/protoUtils";
 
+// Get project root directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, "../..");
+
 async function sendStreamCppRequest(
   code: string = "function"
 ): Promise<string> {
@@ -37,9 +44,9 @@ async function sendStreamCppRequest(
   console.log("New Code:", code);
 
   const { Request, Response } = await loadProtoTypes(
-    "./protobuf/streamCppRequest.proto",
+    path.join(projectRoot, "protobuf/streamCppRequest.proto"),
     "aiserver.v1.StreamCppRequest",
-    "./protobuf/streamCppResponse.proto",
+    path.join(projectRoot, "protobuf/streamCppResponse.proto"),
     "aiserver.v1.StreamCppResponse"
   );
 

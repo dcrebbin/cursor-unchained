@@ -12,18 +12,40 @@ const app = new Elysia({ prefix: "/api" })
     });
   })
   .post("/streamCpp", async ({ body }) => {
-    const code = (body as { code: string }).code;
-    console.log("Code:", code);
-    const streamCpp = await sendStreamCppRequest(code);
-    return new Response(streamCpp, {
-      headers: { "Content-Type": "application/json" },
-    });
+    try {
+      const code = (body as { code: string }).code;
+      console.log("Code:", code);
+      const streamCpp = await sendStreamCppRequest(code);
+      return new Response(streamCpp, {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Error in /streamCpp:", error);
+      return new Response(
+        JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
   })
   .get("/streamCpp", async () => {
-    const streamCpp = await sendStreamCppRequest();
-    return new Response(streamCpp, {
-      headers: { "Content-Type": "application/json" },
-    });
+    try {
+      const streamCpp = await sendStreamCppRequest();
+      return new Response(streamCpp, {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Error in GET /streamCpp:", error);
+      return new Response(
+        JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
   })
   .post("/", ({ body }) => body, {
     body: t.Object({

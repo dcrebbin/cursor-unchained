@@ -55,16 +55,28 @@
             code: currentCode,
           }),
         })
-          .then((response) => response.json())
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
           .then((data) => {
+            if (data.error) {
+              console.error("API Error:", data.error);
+              return;
+            }
             const code = data.text;
             console.log("Stream Cpp:", code);
 
-            if (transparentEditor) {
+            if (transparentEditor && code) {
               transparentEditor
                 .getModel()
                 ?.setValue(code.replaceAll("\\n", "\n"));
             }
+          })
+          .catch((error) => {
+            console.error("Fetch error:", error);
           });
       }
 

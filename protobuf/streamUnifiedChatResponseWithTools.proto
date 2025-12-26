@@ -2,13 +2,49 @@ syntax = "proto3";
 
 package aiserver.v1;
 
-// Placeholder message types - replace with actual definitions
-message ClientSideToolV2Call {}
-message StreamUnifiedChatResponse {}
-message ConversationSummary {}
-message UserRules {}
-message StreamStart {}
-message TracingContext {}
+// ClientSideToolV2Call - tool calls from the server
+message ClientSideToolV2Call {
+  int32 tool = 1;
+  string tool_call_id = 2;
+  // Additional fields based on tool type
+  string name = 3;
+  string arguments = 4;
+}
+
+// StreamUnifiedChatResponse - main response message
+message StreamUnifiedChatResponse {
+  optional string text = 1;
+  optional int32 suggestion_start_line = 2;
+  optional double suggestion_confidence = 3;
+  optional bool done_stream = 4;
+  optional string debug_model_output = 5;
+  optional string debug_model_input = 6;
+  optional string debug_stream_time = 7;
+  optional string debug_total_time = 8;
+  optional string debug_ttft_time = 9;
+  optional string debug_server_timing = 10;
+}
+
+// ConversationSummary
+message ConversationSummary {
+  string summary = 1;
+}
+
+// UserRules
+message UserRules {
+  repeated string rules = 1;
+}
+
+// StreamStart
+message StreamStart {
+  string request_id = 1;
+}
+
+// TracingContext
+message TracingContext {
+  string trace_id = 1;
+  string span_id = 2;
+}
 
 message StreamUnifiedChatResponseWithTools {
   oneof response {

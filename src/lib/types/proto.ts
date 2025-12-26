@@ -331,8 +331,8 @@ export interface ManuallyDecodedResponse {
 }
 
 export interface StreamUnifiedChatRequestWithTools {
-  request: StreamUnifiedChatRequest;
-  clientSideToolV2Result: ClientSideToolV2Result;
+  streamUnifiedChatRequest?: StreamUnifiedChatRequest;
+  clientSideToolV2Result?: ClientSideToolV2Result;
 }
 
 export interface StreamUnifiedChatResponseWithTools {
@@ -445,7 +445,7 @@ export interface StreamUnifiedChatRequest {
 
 export interface Conversation {
   text: string;
-  type: string;
+  type: number; // enum: 0=UNSPECIFIED, 1=HUMAN, 2=AI
   attachedCodeChunks?: unknown[];
   codebaseContextChunks?: unknown[];
   commits?: unknown[];
@@ -512,9 +512,120 @@ export interface Conversation {
   workspaceUris?: string[];
 }
 
+// Tool enum type (placeholder - replace with actual enum if available)
+export enum ClientSideTool {
+  UNSPECIFIED = 0,
+  // Add other tool types as needed
+}
+
 export interface ClientSideToolV2Result {
-  toolName: string;
-  toolResult: string;
+  // Field 1: tool (enum)
+  tool: ClientSideTool;
+
+  // Field 35: tool_call_id (scalar type 9 - uint64/int64)
+  toolCallId: string | bigint;
+
+  // Field 8: error (message, optional)
+  error?: unknown;
+
+  // Field 48: model_call_id (scalar type 9 - uint64/int64, optional)
+  modelCallId?: string | bigint;
+
+  // Field 49: tool_index (scalar type 13 - sint32, optional)
+  toolIndex?: number;
+
+  // Field 50: attachments (message, optional)
+  attachments?: unknown;
+
+  // Oneof "result" fields - only one should be set at a time
+  // Field 2
+  readSemsearchFilesResult?: unknown;
+  // Field 4
+  ripgrepSearchResult?: unknown;
+  // Field 6
+  readFileResult?: unknown;
+  // Field 9
+  listDirResult?: unknown;
+  // Field 10
+  editFileResult?: unknown;
+  // Field 11
+  fileSearchResult?: unknown;
+  // Field 18
+  semanticSearchFullResult?: unknown;
+  // Field 20
+  deleteFileResult?: unknown;
+  // Field 21
+  reapplyResult?: unknown;
+  // Field 24
+  runTerminalCommandV2Result?: unknown;
+  // Field 25
+  fetchRulesResult?: unknown;
+  // Field 27
+  webSearchResult?: unknown;
+  // Field 28
+  mcpResult?: unknown;
+  // Field 32
+  searchSymbolsResult?: unknown;
+  // Field 33
+  backgroundComposerFollowupResult?: unknown;
+  // Field 34
+  knowledgeBaseResult?: unknown;
+  // Field 36
+  fetchPullRequestResult?: unknown;
+  // Field 37
+  deepSearchResult?: unknown;
+  // Field 38
+  createDiagramResult?: unknown;
+  // Field 39
+  fixLintsResult?: unknown;
+  // Field 40
+  readLintsResult?: unknown;
+  // Field 41
+  gotodefResult?: unknown;
+  // Field 42
+  taskResult?: unknown;
+  // Field 43
+  awaitTaskResult?: unknown;
+  // Field 44
+  todoReadResult?: unknown;
+  // Field 45
+  todoWriteResult?: unknown;
+  // Field 51
+  editFileV2Result?: unknown;
+  // Field 52
+  listDirV2Result?: unknown;
+  // Field 53
+  readFileV2Result?: unknown;
+  // Field 54
+  ripgrepRawSearchResult?: unknown;
+  // Field 55
+  globFileSearchResult?: unknown;
+  // Field 56
+  createPlanResult?: unknown;
+  // Field 57
+  listMcpResourcesResult?: unknown;
+  // Field 58
+  readMcpResourceResult?: unknown;
+  // Field 59
+  readProjectResult?: unknown;
+  // Field 60
+  updateProjectResult?: unknown;
+  // Field 61
+  taskV2Result?: unknown;
+  // Field 62
+  callMcpToolResult?: unknown;
+  // Field 63
+  applyAgentDiffResult?: unknown;
+  // Field 64
+  askQuestionResult?: unknown;
+  // Field 65
+  switchModeResult?: unknown;
+  // Field 66
+  computerUseResult?: unknown;
+  // Field 67
+  generateImageResult?: unknown;
+  // Field 68
+  writeShellStdinResult?: unknown;
 }
 
 export interface StreamUnifiedChatResponse {

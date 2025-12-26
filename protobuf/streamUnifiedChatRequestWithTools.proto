@@ -2,34 +2,311 @@ syntax = "proto3";
 
 package aiserver.v1;
 
-// External placeholder messages - replace with actual definitions
-message ConversationMessage {}
-message ConversationHeaderOnly {}
-message ExplicitContext {}
-message ModelDetails {}
-message LinterErrors {}
-message ExternalLink {}
-message FileDiffHistory {}
-message Quote {}
-message RankedContext {}
-message RepositoryInfo {}
-message RepoQueryAccess {}
-message EnvironmentInfo {}
-message ConversationSummary {}
-message McpTool {}
-message ProjectLayout {}
-message SubagentInfo {}
-message WorkspaceFolder {}
-message Range {}
-message CodeSearchResultItem {}
-message FileInfo {}
-message CurrentFile {}
-message ClientSideToolV2Result {}
+// Position message
+message Position {
+  int32 line = 1;
+  int32 column = 2;
+}
 
-// Enum for supported tools (referenced but not fully defined in source)
-enum SupportedTool {
-  SUPPORTED_TOOL_UNSPECIFIED = 0;
-  // Add other tool types as needed
+// Range message
+message Range {
+  Position start_position = 1;
+  Position end_position = 2;
+}
+
+// ModelInfo for conversation messages
+message ModelInfo {
+  optional string model_name = 1;
+}
+
+// CodeChunk - attached code snippets
+message CodeChunk {
+  string relative_workspace_path = 1;
+  int32 start_line_number = 2;
+  repeated string lines = 3;
+  optional int32 summarization_strategy = 4;
+  string language_identifier = 5;
+  optional int32 intent = 6;
+  optional bool is_final_version = 7;
+  optional bool is_first_version = 8;
+  optional bool contents_are_missing = 9;
+  optional bool is_only_included_from_folder = 10;
+}
+
+// Placeholder messages for nested types
+message Commit {}
+message PullRequest {}
+message GitDiff {}
+message SuggestedDiff {}
+message InterpreterResult {}
+message Image {}
+message LintError {}
+message AttachedFolderNew {}
+message Lint {}
+message UserResponse {}
+message ToolResult {}
+message Notepad {}
+message Capability {}
+message EditTrailContext {}
+message SuggestedCodeBlock {}
+message RedDiff {
+  string relative_workspace_path = 1;
+}
+message DiffHistory {}
+message FileDiffTrajectory {}
+message ConversationSummaryMsg {}
+message DocsReference {}
+message WebReference {}
+message AiWebSearchResult {}
+message GitContext {}
+message ListDirResult {}
+message HumanChange {}
+message SummarizedComposer {}
+message CursorRule {}
+message ContextPiece {}
+message Thinking {}
+message DiffSinceLastApply {}
+message DeletedFile {}
+message CurrentFileLocationData {}
+message ConsoleLog {}
+message KnowledgeItem {}
+message UiElement {}
+message DocumentationSelection {}
+message ExternalLink {}
+message ProjectLayout {}
+message SubagentReturn {}
+message CapabilityContext {}
+message Todo {}
+message IdeEditorsState {}
+message ContextWindowStatus {}
+message PlanUpdate {}
+message McpDescriptor {}
+message DebugModeConfig {}
+message RecentLocation {
+  string relative_workspace_path = 1;
+  int32 line_number = 2;
+}
+
+// ConversationMessage - the main message in conversations
+// Field numbers from Cursor source code
+message ConversationMessage {
+  // MessageType enum
+  enum MessageType {
+    MESSAGE_TYPE_UNSPECIFIED = 0;
+    MESSAGE_TYPE_HUMAN = 1;
+    MESSAGE_TYPE_AI = 2;
+  }
+
+  string text = 1;
+  MessageType type = 2;  // This is an enum, not a string!
+  repeated CodeChunk attached_code_chunks = 3;
+  repeated CodeChunk codebase_context_chunks = 4;
+  repeated Commit commits = 5;
+  repeated PullRequest pull_requests = 6;
+  repeated GitDiff git_diffs = 7;
+  repeated SuggestedDiff assistant_suggested_diffs = 8;
+  repeated InterpreterResult interpreter_results = 9;
+  repeated Image images = 10;
+  repeated string attached_folders = 11;  // This is repeated string, not message
+  repeated LintError approximate_lint_errors = 12;
+  string bubble_id = 13;
+  repeated AttachedFolderNew attached_folders_new = 14;
+  repeated Lint lints = 15;
+  repeated UserResponse user_responses_to_suggested_code_blocks = 16;
+  repeated string relevant_files = 17;  // repeated string
+  repeated ToolResult tool_results = 18;
+  repeated Notepad notepads = 19;
+  optional bool is_capability_iteration = 20;
+  repeated Capability capabilities = 21;
+  repeated EditTrailContext edit_trail_contexts = 22;
+  repeated SuggestedCodeBlock suggested_code_blocks = 23;
+  repeated RedDiff diffs_for_compressing_files = 24;
+  repeated LinterErrors multi_file_linter_errors = 25;
+  repeated DiffHistory diff_histories = 26;
+  repeated CodeChunk recently_viewed_files = 27;
+  repeated RecentLocation recent_locations_history = 28;
+  bool is_agentic = 29;
+  repeated FileDiffTrajectory file_diff_trajectories = 30;
+  optional ConversationSummaryMsg conversation_summary = 31;
+  optional string server_bubble_id = 32;
+  bool existed_subsequent_terminal_command = 33;
+  bool existed_previous_terminal_command = 34;
+  repeated DocsReference docs_references = 35;
+  repeated WebReference web_references = 36;
+  optional GitContext git_context = 37;
+  repeated ListDirResult attached_folders_list_dir_results = 38;
+  optional ConversationSummaryMsg cached_conversation_summary = 39;
+  repeated HumanChange human_changes = 40;
+  bool attached_human_changes = 41;
+  repeated SummarizedComposer summarized_composers = 42;
+  repeated CursorRule cursor_rules = 43;
+  repeated ContextPiece context_pieces = 44;
+  optional Thinking thinking = 45;
+  repeated Thinking all_thinking_blocks = 46;
+  optional int32 unified_mode = 47;  // This is an enum
+  repeated DiffSinceLastApply diffs_since_last_apply = 48;
+  repeated DeletedFile deleted_files = 49;
+  optional string usage_uuid = 50;
+  repeated int32 supported_tools = 51;  // This is repeated enum
+  optional CurrentFileLocationData current_file_location_data = 52;
+  optional bool edit_tool_supports_search_and_replace = 53;
+  optional string last_terminal_cwd = 54;
+  optional bool user_explicitly_asked_to_generate_cursor_rules = 55;
+  repeated ConsoleLog console_logs = 56;
+  optional string rich_text = 57;
+  repeated KnowledgeItem knowledge_items = 58;
+  repeated UiElement ui_element_picked = 59;
+  optional bool user_explicitly_asked_to_add_to_knowledge_base = 60;
+  repeated DocumentationSelection documentation_selections = 61;
+  repeated ExternalLink external_links = 62;
+  optional bool use_web = 63;
+  repeated ProjectLayout project_layouts = 64;
+  optional int32 thinking_duration_ms = 65;
+  optional SubagentReturn subagent_return = 66;
+  optional bool is_simple_looping_message = 67;
+  repeated CapabilityContext capability_contexts = 68;
+  optional string checkpoint_commit_hash = 69;
+  optional string git_status_raw = 70;
+  repeated Todo todos = 71;
+  optional bool is_review_edits_followup = 72;
+  optional IdeEditorsState ide_editors_state = 73;
+  string request_id = 74;
+  repeated AiWebSearchResult ai_web_search_results = 75;
+  optional ContextWindowStatus context_window_status = 76;
+  optional bool is_plan_execution = 77;
+  string created_at = 78;
+  ModelInfo model_info = 79;
+  optional bool is_quick_search_query = 80;
+  optional PlanUpdate plan_update = 81;
+  optional bool is_simulated_msg = 82;
+  repeated McpDescriptor mcp_descriptors = 83;
+  optional string workspace_project_dir = 84;
+  optional int32 thinking_style = 85;  // enum
+  optional DebugModeConfig debug_mode_config = 86;
+  repeated string workspace_uris = 87;
+  optional int32 step_duration_ms = 88;
+}
+
+// ConversationHeaderOnly for full_conversation_headers_only field
+message ConversationHeaderOnly {
+  string bubble_id = 1;
+  ConversationMessage.MessageType type = 2;
+}
+
+// ExplicitContext message
+message ExplicitContext {
+  string context = 1;
+  repeated string rules = 2;
+  repeated string mcp_instructions = 3;
+}
+
+// AzureState for ModelDetails
+message AzureState {
+  string api_key = 1;
+  string base_url = 2;
+  string deployment = 3;
+  bool use_azure = 4;
+}
+
+// ModelDetails message
+message ModelDetails {
+  string model_name = 1;
+  AzureState azure_state = 2;
+  bool max_mode = 3;
+}
+
+// LinterErrors message
+message LinterErrors {
+  string relative_workspace_path = 1;
+  repeated LinterError errors = 2;
+  string file_contents = 3;
+}
+
+message LinterError {
+  string message = 1;
+}
+
+// FileDiffHistory message
+message FileDiffHistory {
+  string file_name = 1;
+  repeated string diff_history = 2;
+  repeated int64 diff_history_timestamps = 3;
+}
+
+// Quote message
+message Quote {
+  string text = 1;
+  optional string source = 2;
+}
+
+// RankedContext message
+message RankedContext {
+  string context = 1;
+  optional double score = 2;
+}
+
+// RepositoryInfo message
+message RepositoryInfo {
+  string relative_workspace_path = 1;
+  repeated string remote_urls = 2;
+  repeated string remote_names = 3;
+  string repo_name = 4;
+  string repo_owner = 5;
+  optional bool is_tracked = 6;
+  optional bool is_local = 7;
+  optional int32 num_files = 8;
+  optional int64 orthogonal_transform_seed = 9;
+  optional string preferred_embedding_model = 10;
+  optional string workspace_uri = 11;
+}
+
+// RepoQueryAccess message
+message RepoQueryAccess {
+  optional string access_token = 1;
+}
+
+// EnvironmentInfo message
+message EnvironmentInfo {
+  string exthost_platform = 1;
+  string exthost_arch = 2;
+  string exthost_release = 3;
+  string exthost_shell = 4;
+  int64 local_timestamp = 5;
+  repeated string workspace_uris = 6;
+  string home_directory = 7;
+  string local_timezone = 8;
+}
+
+// ConversationSummary message
+message ConversationSummary {
+  string summary = 1;
+}
+
+// McpTool message
+message McpTool {
+  string name = 1;
+  optional string description = 2;
+}
+
+// WorkspaceFolder message
+message WorkspaceFolder {
+  string uri = 1;
+  string name = 2;
+}
+
+// CurrentFile message
+message CurrentFile {
+  string relative_workspace_path = 1;
+  string contents = 2;
+  Position cursor_position = 3;
+  string language_id = 4;
+}
+
+// ClientSideToolV2Result message
+message ClientSideToolV2Result {
+  int32 tool = 1;
+  string tool_call_id = 35;
+  optional string error = 8;
 }
 
 message StreamUnifiedChatRequest {
@@ -50,48 +327,6 @@ message StreamUnifiedChatRequest {
     THINKING_LEVEL_HIGH = 2;
   }
 
-  // Nested messages
-  message RedDiff {
-    string relative_workspace_path = 1;
-    repeated Range red_ranges = 2;
-    repeated Range red_ranges_reversed = 3;
-    string start_hash = 4;
-    string end_hash = 5;
-  }
-
-  message RecentEdits {
-    message CodeBlockInfo {
-      string relative_workspace_path = 1;
-      optional string content_before = 2;
-      optional string content_after = 3;
-      optional string generation_uuid = 4;
-      optional int32 version = 5;
-    }
-
-    message FileInfo {
-      string relative_workspace_path = 1;
-      string content = 2;
-    }
-
-    repeated CodeBlockInfo code_block_info = 1;
-    repeated FileInfo final_file_values = 2;
-    optional string edits_belong_to_composer_generation_uuid = 3;
-  }
-
-  message CodeSearchResult {
-    repeated CodeSearchResultItem results = 1;
-    repeated FileInfo all_files = 2;
-  }
-
-  message FullFileCmdKOptions {
-    string file_path = 1;
-  }
-
-  message CurrentPlan {
-    string content = 1;
-    string name = 2;
-  }
-
   // Fields
   repeated ConversationMessage conversation = 1;
   optional bool allow_long_file_scan = 2;
@@ -108,8 +343,6 @@ message StreamUnifiedChatRequest {
   optional bool should_cache = 13;
   repeated LinterErrors multi_file_linter_errors = 14;
   CurrentFile current_file = 15;
-  optional RecentEdits recent_edits = 16;
-  optional bool use_reference_composer_diff_prompt = 17;
   repeated FileDiffHistory file_diff_histories = 18;
   optional bool use_new_compression_scheme = 19;
   repeated RankedContext additional_ranked_context = 20;
@@ -121,7 +354,7 @@ message StreamUnifiedChatRequest {
   EnvironmentInfo environment_info = 26;
   bool is_agentic = 27;
   optional ConversationSummary conversation_summary = 28;
-  repeated SupportedTool supported_tools = 29;
+  repeated int32 supported_tools = 29;  // enum values as int32
   repeated ConversationHeaderOnly full_conversation_headers_only = 30;
   bool enable_yolo_mode = 31;
   string yolo_prompt = 32;
@@ -132,42 +365,22 @@ message StreamUnifiedChatRequest {
   optional bool allow_model_fallbacks = 37;
   optional int32 number_of_times_shown_fallback_model_warning = 38;
   bool repository_info_should_query_prod = 39;
-  optional string context_bank_session_id = 40;
-  optional int32 context_bank_version = 41;
-  optional CodeSearchResult uses_codebase_results = 42;
-  optional bytes context_bank_encryption_key = 43;
   string repo_query_auth_token = 44;
   bool is_headless = 45;
   optional UnifiedMode unified_mode = 46;
-  repeated SupportedTool tools_requiring_accepted_return = 47;
+  repeated int32 tools_requiring_accepted_return = 47;  // enum values
   optional bool should_disable_tools = 48;
   optional ThinkingLevel thinking_level = 49;
-  optional bool should_use_chat_prompt = 50;
-  optional bool uses_rules = 51;
-  RepoQueryAccess query_only_repo_access = 52;
   optional bool mode_uses_auto_apply = 53;
   optional string unified_mode_name = 54;
-  optional string background_composer_id = 55;
-  optional bool use_generate_rules_prompt = 56;
   optional bool edit_tool_supports_search_and_replace = 57;
   repeated ProjectLayout project_layouts = 58;
-  optional string repository_name_if_unindexed = 59;
-  optional double indexing_progress = 60;
-  optional FullFileCmdKOptions full_file_cmd_k_options = 61;
-  optional string indexing_phase_if_unindexed = 62;
-  optional bool use_knowledge_base_prompt = 63;
-  optional int32 indexing_num_files_if_unindexed = 64;
   optional bool supports_mermaid_diagrams = 65;
-  optional SubagentInfo subagent_info = 66;
   bool supports_git_index = 67;
   bool is_background_composer = 68;
   bool force_is_not_dev = 69;
   optional bool disable_edit_file_timeout = 70;
-  optional bool should_attach_linter_errors = 71;
   string replying_to_request_id = 72;
-  optional bool should_speculatively_route_gpt5 = 73;
-  optional bool force_terminal_hanging_detection = 74;
-  optional bool force_summarization = 75;
   optional bool is_quick_search_query = 76;
   optional bool is_spec_mode = 77;
   bool allow_server_side_semantic_search = 78;
@@ -175,15 +388,9 @@ message StreamUnifiedChatRequest {
   repeated WorkspaceFolder workspace_folders = 81;
   optional bool does_readfile_support_images = 82;
   optional bool sandboxing_support_enabled = 83;
-  optional string custom_planning_instructions = 84;
   optional bool enable_terminal_file_persistence = 85;
   optional string terminals_folder = 86;
-  optional string agent_notes_folder = 87;
-  optional string agent_tools_folder = 88;
-  optional CurrentPlan current_plan = 89;
   optional bool has_mcp_descriptors = 90;
-  optional string best_of_n_group_id = 91;
-  optional bool try_use_best_of_n_promotion = 92;
   optional string agent_transcripts_folder = 93;
 }
 

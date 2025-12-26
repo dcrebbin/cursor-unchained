@@ -1,4 +1,5 @@
 import type {
+  ClientSideToolV2Result,
   CurrentFileInfo,
   RefreshTabContextRequest,
   StreamCppRequest,
