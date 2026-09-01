@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package exa.diff_action_pb;
+
+message UnifiedDiff {
+  repeated UnifiedDiffLine lines = 1;
+
+  message UnifiedDiffLine {
+    string text = 1;
+    int32 type = 2;
+  }
+}
+
+message CharacterDiff {
+  repeated CharacterDiffChange changes = 1;
+}
+
+message CharacterDiffChange {
+  string text = 1;
+  int32 type = 2;
+}

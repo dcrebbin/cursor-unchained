@@ -7,23 +7,23 @@ import type {
   ProtoReader,
   ManuallyDecodedResponse,
   DecodedCodeResult,
-} from "./types/proto";
+} from "../types/proto";
 import { defaultRefreshTabContextPayload } from "./constants";
-import { CURSOR_BEARER_TOKEN, X_REQUEST_ID, X_SESSION_ID } from "./env";
+import { CURSOR_BEARER_TOKEN, X_REQUEST_ID, X_SESSION_ID } from "../env";
 
 async function sendRequest(): Promise<void> {
   const requestRoot = await protobuf.load(
-    "./protobuf/refreshTabContextRequest.proto"
+    "./protobuf/cursor/refreshTabContextRequest.proto",
   );
   const Request = requestRoot.lookupType(
-    "aiserver.v1.RefreshTabContextRequest"
+    "aiserver.v1.RefreshTabContextRequest",
   ) as unknown as ProtoType;
 
   const responseRoot = await protobuf.load(
-    "./protobuf/refreshTabContextResponse.proto"
+    "./protobuf/cursor/refreshTabContextResponse.proto",
   );
   const Response = responseRoot.lookupType(
-    "aiserver.v1.RefreshTabContextResponse"
+    "aiserver.v1.RefreshTabContextResponse",
   ) as unknown as ProtoType;
 
   const payload: RefreshTabContextRequest = defaultRefreshTabContextPayload;
@@ -62,7 +62,7 @@ async function sendRequest(): Promise<void> {
       ) {
         try {
           const jsonResponse = JSON.parse(
-            responseBuffer.toString("utf8")
+            responseBuffer.toString("utf8"),
           ) as unknown;
           console.log("JSON Response:");
           console.log(JSON.stringify(jsonResponse, null, 2));
@@ -96,7 +96,7 @@ async function sendRequest(): Promise<void> {
           // Try to decode with a reader that skips unknown fields
           try {
             const reader = protobuf.Reader.create(
-              responseBuffer
+              responseBuffer,
             ) as ProtoReader;
             const decoded: ManuallyDecodedResponse = {};
 
@@ -245,7 +245,7 @@ async function sendRequest(): Promise<void> {
                             else {
                               // Invalid wire type - this might be the issue
                               throw new Error(
-                                `Invalid wire type ${dlWireType} in DetailedLine at pos ${reader.pos}`
+                                `Invalid wire type ${dlWireType} in DetailedLine at pos ${reader.pos}`,
                               );
                             }
                           }
@@ -266,7 +266,7 @@ async function sendRequest(): Promise<void> {
                         const innerError = skipErr as Error;
                         console.error(
                           `Error at cbFieldNo ${cbFieldNo}, wireType ${cbWireType}, pos ${reader.pos}:`,
-                          innerError.message
+                          innerError.message,
                         );
                         // Try to recover by skipping to next field
                         break;
@@ -298,12 +298,12 @@ async function sendRequest(): Promise<void> {
             if (responseBuffer.length > 0) {
               const preview = responseBuffer.slice(
                 0,
-                Math.min(200, responseBuffer.length)
+                Math.min(200, responseBuffer.length),
               );
               console.log("Response preview (hex):", preview.toString("hex"));
               console.log(
                 "Response preview (text):",
-                preview.toString("utf8").replace(/[^\x20-\x7E\n\r]/g, ".")
+                preview.toString("utf8").replace(/[^\x20-\x7E\n\r]/g, "."),
               );
             }
           }
@@ -313,7 +313,7 @@ async function sendRequest(): Promise<void> {
         // Try JSON first (most common for errors)
         try {
           const jsonResponse = JSON.parse(
-            responseBuffer.toString("utf8")
+            responseBuffer.toString("utf8"),
           ) as unknown;
           console.log("Detected JSON Response:");
           console.log(JSON.stringify(jsonResponse, null, 2));

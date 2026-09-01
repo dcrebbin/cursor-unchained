@@ -11,6 +11,8 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"streamCpp": "bun run scripts/streamCpp.ts",
+		"streamingCommand": "bun run scripts/streamingCommand.ts",
+		"monitorLocalServer": "bun run scripts/monitorLocalServer.ts",
 		"refreshTabContext": "bun run scripts/refreshTabContext.ts"
 	},
 	"devDependencies": {

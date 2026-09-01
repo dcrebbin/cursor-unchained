@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package exa.codeium_common_pb;
+
+import "google/protobuf/timestamp.proto";
+
+message Document {
+  string absolute_path_migrate_me_to_uri = 1;
+  string relative_path_migrate_me_to_workspace_uri = 2;
+  string text = 3;
+  string editor_language = 4;
+  int32 language = 5;
+  int64 cursor_offset = 6;
+  string line_ending = 7;
+  Range visible_range = 9;
+  bool is_cutoff_start = 10;
+  bool is_cutoff_end = 11;
+  string absolute_uri = 12;
+  string workspace_uri = 13;
+  int32 lines_cutoff_start = 14;
+  int32 lines_cutoff_end = 15;
+  google.protobuf.Timestamp timestamp = 16;
+  bool is_dirty = 17;
+  bool is_synthetic = 18;
+}
+
+message Range {
+  int64 start_offset = 1;
+  int64 end_offset = 2;
+  DocumentPosition start_position = 3;
+  DocumentPosition end_position = 4;
+}
+
+message DocumentPosition {
+  int64 row = 1;
+  int64 col = 2;
+}
+
+message EditorOptions {
+  int64 tab_size = 1;
+  bool insert_spaces = 2;
+  bool disable_autocomplete_in_comments = 3;
+}
+
+message SuperCompleteFilterReason {
+  string reason = 1;
+}

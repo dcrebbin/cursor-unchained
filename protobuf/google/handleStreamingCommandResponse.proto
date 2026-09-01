@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package exa.language_server_pb;
+
+import "codeiumCommon.proto";
+import "diffAction.proto";
+
+message HandleStreamingCommandResponse {
+  string completion_id = 1;
+  string prompt_id = 2;
+  exa.diff_action_pb.UnifiedDiff diff = 3;
+  LatencyInfo latency_info = 4;
+  int64 selection_start_line = 5;
+  int64 selection_end_line = 6;
+  optional double score = 7;
+  exa.diff_action_pb.CharacterDiff character_diff = 8;
+  exa.codeium_common_pb.SuperCompleteFilterReason filter_reason = 10;
+  int32 stop_reason = 13;
+  string raw_text = 16;
+  string trace_id = 17;
+}
+
+message LatencyInfo {
+  int64 client_latency_ms = 1;
+  int64 prompt_latency_ms = 2;
+  repeated PromptStageLatency prompt_stage_latencies = 3;
+  int64 debounce_latency_ms = 4;
+  int64 rpc_latency_ms = 5;
+  int64 network_latency_ms = 6;
+}
+
+// response.ts has no prompt-stage entries from which to infer this shape.
+message PromptStageLatency {}

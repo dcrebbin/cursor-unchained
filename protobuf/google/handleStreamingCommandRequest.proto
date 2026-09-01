@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package exa.language_server_pb;
+
+import "codeiumCommon.proto";
+
+message HandleStreamingCommandRequest {
+  exa.codeium_common_pb.Document document = 2;
+  exa.codeium_common_pb.EditorOptions editor_options = 3;
+  int32 requested_model_id = 4;
+  int64 selection_start_line = 6;
+  int64 selection_end_line = 7;
+  string command_text = 8;
+  int32 request_source = 9;
+  string parent_completion_id = 12;
+  int32 diff_type = 13;
+  repeated Diagnostic diagnostics = 14;
+  int32 supercomplete_trigger_condition = 15;
+  bool ignore_supercomplete_debounce = 17;
+  string clipboard_entry = 18;
+  repeated IntellisenseSuggestion intellisense_suggestions = 19;
+}
+
+// The sample request contains no values for these repeated fields, so their
+// internal shape cannot be inferred from request.ts yet.
+message Diagnostic {}
+
+message IntellisenseSuggestion {}

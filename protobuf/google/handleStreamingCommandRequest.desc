@@ -1,0 +1,65 @@
+
+ÿ
+google/protobuf/timestamp.protogoogle.protobuf";
+	Timestamp
+seconds (Rseconds
+nanos (RnanosB…
+com.google.protobufBTimestampProtoPZ2google.golang.org/protobuf/types/known/timestamppbø¢GPBªGoogle.Protobuf.WellKnownTypesbproto3
+µ
+
+codeiumCommon.protoexa.codeium_common_pbgoogle/protobuf/timestamp.proto"í
+DocumentC
+absolute_path_migrate_me_to_uri (	RabsolutePathMigrateMeToUriV
+)relative_path_migrate_me_to_workspace_uri (	R#relativePathMigrateMeToWorkspaceUri
+text (	Rtext'
+editor_language (	ReditorLanguage
+language (Rlanguage#
+cursor_offset (RcursorOffset
+line_ending (	R
+lineEndingA
+visible_range	 (2.exa.codeium_common_pb.RangeRvisibleRange&
+is_cutoff_start
+ (RisCutoffStart"
+is_cutoff_end (RisCutoffEnd!
+absolute_uri (	RabsoluteUri#
+workspace_uri (	RworkspaceUri,
+lines_cutoff_start (RlinesCutoffStart(
+lines_cutoff_end (RlinesCutoffEnd8
+	timestamp (2.google.protobuf.TimestampR	timestamp
+is_dirty (RisDirty!
+is_synthetic (RisSynthetic"å
+Range!
+start_offset (RstartOffset
+
+end_offset (R	endOffsetN
+start_position (2'.exa.codeium_common_pb.DocumentPositionRstartPositionJ
+end_position (2'.exa.codeium_common_pb.DocumentPositionRendPosition"6
+DocumentPosition
+row (Rrow
+col (Rcol"˜
+EditorOptions
+tab_size (RtabSize#
+insert_spaces (RinsertSpacesG
+ disable_autocomplete_in_comments (RdisableAutocompleteInComments"3
+SuperCompleteFilterReason
+reason (	Rreasonbproto3
+»
+#handleStreamingCommandRequest.protoexa.language_server_pbcodeiumCommon.proto"¶
+HandleStreamingCommandRequest;
+document (2.exa.codeium_common_pb.DocumentRdocumentK
+editor_options (2$.exa.codeium_common_pb.EditorOptionsReditorOptions,
+requested_model_id (RrequestedModelId0
+selection_start_line (RselectionStartLine,
+selection_end_line (RselectionEndLine!
+command_text (	RcommandText%
+request_source	 (RrequestSource0
+parent_completion_id (	RparentCompletionId
+	diff_type (RdiffTypeD
+diagnostics (2".exa.language_server_pb.DiagnosticRdiagnosticsF
+supercomplete_trigger_condition (RsupercompleteTriggerConditionB
+ignore_supercomplete_debounce (RignoreSupercompleteDebounce'
+clipboard_entry (	RclipboardEntryi
+intellisense_suggestions (2..exa.language_server_pb.IntellisenseSuggestionRintellisenseSuggestions"
+
+Diagnostic"
+IntellisenseSuggestionbproto3

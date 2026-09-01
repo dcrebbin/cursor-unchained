@@ -2,7 +2,7 @@ import type {
   CurrentFileInfo,
   RefreshTabContextRequest,
   StreamCppRequest,
-} from "./types/proto";
+} from "../types/proto";
 
 export const defaultRefreshTabContextPayload: RefreshTabContextRequest = {
   currentFile: {

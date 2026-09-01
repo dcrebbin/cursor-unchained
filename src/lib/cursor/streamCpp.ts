@@ -5,22 +5,22 @@ import type {
   StreamCppRequest,
   StreamCppResult,
   ProtoType,
-} from "./types/proto";
+} from "../types/proto";
 import { defaultStreamCppPayload } from "./constants";
 import {
   CURSOR_BEARER_TOKEN,
   X_CURSOR_CLIENT_VERSION,
   X_REQUEST_ID,
   X_SESSION_ID,
-} from "./env";
+} from "../env";
 
 async function sendStreamCppRequest(
-  code: string = "function"
+  code: string = "function",
 ): Promise<string> {
   const token = CURSOR_BEARER_TOKEN;
   if (!token || token === "undefined") {
     console.error(
-      "Missing CURSOR_BEARER_TOKEN. dotenv loaded 0 vars; set it in your shell or .env."
+      "Missing CURSOR_BEARER_TOKEN. dotenv loaded 0 vars; set it in your shell or .env.",
     );
     process.exit(1);
   }
@@ -29,22 +29,24 @@ async function sendStreamCppRequest(
   newPayload.currentFile.contents = code;
 
   console.log("New Code:", code);
-  const requestRoot = await protobuf.load("./protobuf/streamCppRequest.proto");
+  const requestRoot = await protobuf.load(
+    "./protobuf/cursor/streamCppRequest.proto",
+  );
   const Request = requestRoot.lookupType(
-    "aiserver.v1.StreamCppRequest"
+    "aiserver.v1.StreamCppRequest",
   ) as unknown as ProtoType;
 
   const responseRoot = await protobuf.load(
-    "./protobuf/streamCppResponse.proto"
+    "./protobuf/cursor/streamCppResponse.proto",
   );
   const Response = responseRoot.lookupType(
-    "aiserver.v1.StreamCppResponse"
+    "aiserver.v1.StreamCppResponse",
   ) as unknown as ProtoType;
 
   const payload: StreamCppRequest = newPayload;
 
   const protoBuffer = Buffer.from(
-    Request.encode(Request.create(payload)).finish()
+    Request.encode(Request.create(payload)).finish(),
   );
 
   const envelope = Buffer.alloc(5 + protoBuffer.length);
@@ -53,7 +55,7 @@ async function sendStreamCppRequest(
   protoBuffer.copy(envelope, 5);
 
   const url = new URL(
-    "https://us-only.gcpp.cursor.sh:443/aiserver.v1.AiService/StreamCpp"
+    "https://us-only.gcpp.cursor.sh:443/aiserver.v1.AiService/StreamCpp",
   );
 
   const options: https.RequestOptions = {
@@ -244,13 +246,13 @@ async function sendStreamCppRequest(
               JSON.stringify(
                 { error: "Empty response", status: res.statusCode },
                 null,
-                2
-              )
+                2,
+              ),
             );
           } else {
             console.log(
               "Resolving with JSON (length:",
-              jsonResult.length + ")"
+              jsonResult.length + ")",
             );
             resolve(jsonResult);
           }
@@ -260,8 +262,8 @@ async function sendStreamCppRequest(
             JSON.stringify(
               { error: "Failed to stringify result", raw: result },
               null,
-              2
-            )
+              2,
+            ),
           );
         }
       });
@@ -272,13 +274,13 @@ async function sendStreamCppRequest(
           const jsonResult = JSON.stringify(result, null, 2);
           console.log(
             "Resolving with error JSON (length:",
-            jsonResult.length + ")"
+            jsonResult.length + ")",
           );
           resolve(jsonResult);
         } catch (stringifyError) {
           console.error(
             "JSON stringify error in error handler:",
-            stringifyError
+            stringifyError,
           );
           resolve(JSON.stringify({ error: err.message }, null, 2));
         }
