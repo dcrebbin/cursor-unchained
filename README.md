@@ -53,15 +53,17 @@ note: this is obviously a pain and quite brittle, I should find a better way to 
 
 3. Cmd + Shift + P to open the Command Palette
 
-4. Developer: Open Developer Tools for Extension Host > LocalProcess pid: <pid>
+4. Developer: Start Debugging Cursor Always Local Extension Host in a New Window (accept restart Cursor)
 
-5. Navigate to the Network tab
+5. Developer: Open Developer Tools for Extension Host > LocalProcess pid... ext:always-local
 
-6. Trigger the tab completion request: in the Network tab this will appear as StreamCpp
+6. Navigate to the Network tab
 
-7. Copy the bearer token, x-request-id, x-session-id and x-cursor-client-version
+7. Trigger the tab completion request: in the Network tab this will appear as StreamCpp
 
-8. Copy the values and paste them into the `.env` file
+8. Copy the bearer token, x-request-id, x-session-id and x-cursor-client-version
+
+9. Copy the values and paste them into the `.env` file
 
 Note: you can run `npx jwt-decode-cli <token>` to decode your CURSOR_BEARER_TOKEN and get the payload with the expiration date (which I estimate to be 1 - 2 months — but could be longer depending on when the token was last refreshed)
 
